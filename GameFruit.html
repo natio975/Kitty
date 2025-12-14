@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fruit Catch Game - Educational Edition</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #6ecbf5, #c2e9fb);
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        
+        .game-container {
+            position: relative;
+            width: 800px;
+            height: 650px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        #gameCanvas {
+            background: linear-gradient(to bottom, #e0f7fa, #bbdefb); 
+            display: block;
+        }
+
+        .top-bar {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+
+        .stat-display {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 6px 12px;
+            border-radius: 12px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            min-width: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+        }
+
+        .stat-display span {
+            color: #222;
+        }
+
+        .stat-display:nth-child(1) { color: #4CAF50; } /* Score - зелёный */
+        .stat-display:nth-child(2) { color: #ff6b35; } /* Misses - оранжевый */
+        .stat-display:nth-child(3) { color: #d32f2f; } /* Lives - красный */
+
+        .game-controls {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.85);
+            padding: 8px 20px;
+            border-radius: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            font-size: 16px;
+            color: #555;
+            text-align: center;
+            z-index: 10;
+            white-space: nowrap;
+        }
+
+        .ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            text-align: center;
+            z-index: 100;
+        }
+        
+        .quiz-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            color: black;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .quiz-question {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .quiz-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .quiz-option {
+            padding: 15px;
+            background: #f0f0f0;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+        
+        .quiz-option:hover {
+            background: #6ecbf5;
+            color: white;
+            transform: scale(1.05);
+        }
+        
+        .start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #6ecbf5, #c2e9fb);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+        }
+        
+        .start-title {
+            font-size: 48px;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+        
+        .start-btn {
+            padding: 15px 30px;
+            font-size: 24px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .win-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 300;
+        }
+        
+        .win-title {
+            font-size: 48px;
+            color: gold;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px gold;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        
+        <div class="top-bar">
+            <div class="stat-display">Score: <span id="score">0</span></div>
+            <div class="stat-display">Misses: <span id="misses">0</span></div>
+            <div class="stat-display">Lives: <span id="lives">3</span></div>
+        </div>
+        
+        <div class="game-controls">
+            Use ← → arrow keys or mouse to move | Catch fruits to score points
+        </div>
+        
+        <div class="ui-overlay" id="quizOverlay">
+            <div class="quiz-container">
+                <div class="quiz-question" id="quizQuestion"></div>
+                <div class="quiz-options" id="quizOptions"></div>
+            </div>
+        </div>
+        
+        <div class="start-screen" id="startScreen">
+            <h1 class="start-title">🍎 Fruit Catch Game 🍊</h1>
+            <p style="color: white; font-size: 20px; margin-bottom: 30px;">Catch fruits and learn English grammar!</p>
+            <button class="start-btn" onclick="startGame()">Start Game</button>
+            <p style="color: white; margin-top: 20px;">Use arrow keys or mouse to move the basket</p>
+        </div>
+        
+        <div class="win-screen" id="winScreen">
+            <h1 class="win-title">🎉 Congratulations! 🎉</h1>
+            <p style="font-size: 24px;">You reached 50 points and won the game!</p>
+            <button class="start-btn" onclick="resetGame()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        // ✅ Создаём объекты Image для фруктов
+        const fruitImages = {
+            apple: new Image(),
+            banana: new Image(),
+            lemon: new Image(),
+            grape: new Image(),
+            strawberry: new Image()
+        };
+
+        // ✅ Исправленные URL — БЕЗ пробелов!
+        fruitImages.apple.src = 'https://i.postimg.cc/r0DwkLMQ/app.png';
+        fruitImages.banana.src = 'https://i.postimg.cc/9RDQhjC6/bana.png';
+        fruitImages.lemon.src = 'https://i.postimg.cc/k62gmd7C/oran-no-bg-preview-(carve-photos).png';
+        fruitImages.grape.src = 'https://i.postimg.cc/MMnpS8zJ/grape.png';
+        fruitImages.strawberry.src = 'https://i.postimg.cc/ftVRNhMZ/straw-no-bg-preview-(carve-photos).png';
+
+        const quizQuestions = [
+            {
+                question: "Sarah _____ (read) a book every evening.",
+                options: ["is reading", "reads"],
+                answer: "reads"
+            },
+            {
+                question: "Look! Tom _____ (run) in the park.",
+                options: ["runs", "is running"],
+                answer: "is running"
+            },
+            {
+                question: "I usually _____ (go) to school by bus.",
+                options: ["go", "am going"],
+                answer: "go"
+            },
+            {
+                question: "She _____ (study) for her exam right now.",
+                options: ["studies", "is studying"],
+                answer: "is studying"
+            },
+            {
+                question: "My parents _____ (work) in a hospital.",
+                options: ["work", "are working"],
+                answer: "work"
+            },
+            {
+                question: "The children _____ (play) in the garden at the moment.",
+                options: ["play", "are playing"],
+                answer: "are playing"
+            },
+            {
+                question: "He never _____ (eat) meat.",
+                options: ["eats", "is eating"],
+                answer: "eats"
+            },
+            {
+                question: "Listen! Someone _____ (knock) at the door.",
+                options: ["knocks", "is knocking"],
+                answer: "is knocking"
+            },
+            {
+                question: "We _____ (live) in London.",
+                options: ["live", "are living"],
+                answer: "live"
+            },
+            {
+                question: "They _____ (watch) TV now.",
+                options: ["watch", "are watching"],
+                answer: "are watching"
+            },
+            {
+                question: "The sun _____ (rise) in the east.",
+                options: ["rises", "is rising"],
+                answer: "rises"
+            },
+            {
+                question: "She _____ (take) a shower at the moment.",
+                options: ["takes", "is taking"],
+                answer: "is taking"
+            },
+            {
+                question: "I _____ (not like) coffee.",
+                options: ["don't like", "am not liking"],
+                answer: "don't like"
+            },
+            {
+                question: "He _____ (drive) to work now.",
+                options: ["drives", "is driving"],
+                answer: "is driving"
+            },
+            {
+                question: "The shop _____ (open) at 9 AM every day.",
+                options: ["opens", "is opening"],
+                answer: "opens"
+            },
+            {
+                question: "We _____ (have) dinner at the moment.",
+                options: ["have", "are having"],
+                answer: "are having"
+            },
+            {
+                question: "She _____ (teach) English in a school.",
+                options: ["teaches", "is teaching"],
+                answer: "teaches"
+            },
+            {
+                question: "The baby _____ (sleep) right now.",
+                options: ["sleeps", "is sleeping"],
+                answer: "is sleeping"
+            },
+            {
+                question: "They always _____ (arrive) on time.",
+                options: ["arrive", "are arriving"],
+                answer: "arrive"
+            },
+            {
+                question: "I _____ (not feel) well today.",
+                options: ["don't feel", "am not feeling"],
+                answer: "don't feel"
+            }
+        ];
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let score = 0;
+        let lives = 3;
+        let misses = 0;
+        let gameRunning = false;
+        let fruits = [];
+        let basket = { x: canvas.width / 2 - 50, y: canvas.height - 40, width: 100, height: 30 };
+        let gameSpeed = 1;
+        let lastFruitTime = 0;
+        let quizActive = false;
+        let fireworks = [];
+        let winAnimation = false;
+        let lastQuizScore = 0;
+        let shuffledQuizQuestions = []; // ✅ Для случайного порядка
+
+        // ✅ Функция перемешивания
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function areAllImagesLoaded() {
+            return Object.values(fruitImages).every(img => img.complete && img.width > 0);
+        }
+
+        function initGame() {
+            gameRunning = true;
+            winAnimation = false;
+            fireworks = [];
+            score = 0;
+            lives = 3;
+            misses = 0;
+            lastQuizScore = 0;
+            fruits = [];
+            // ✅ Случайный порядок вопросов
+            shuffledQuizQuestions = shuffleArray(quizQuestions);
+            updateScore();
+            updateLives();
+            updateMisses();
+            gameLoop();
+        }
+
+        function startGameWhenReady() {
+            if (areAllImagesLoaded()) {
+                initGame();
+            } else {
+                setTimeout(startGameWhenReady, 100);
+            }
+        }
+
+        function startGame() {
+            document.getElementById('startScreen').style.display = 'none';
+            startGameWhenReady();
+        }
+
+        function resetGame() {
+            document.getElementById('winScreen').style.display = 'none';
+            startGameWhenReady();
+        }
+
+        function updateScore() {
+            document.getElementById('score').textContent = score;
+        }
+
+        function updateLives() {
+            document.getElementById('lives').textContent = lives;
+        }
+
+        function updateMisses() {
+            document.getElementById('misses').textContent = misses;
+        }
+
+        function createFruit() {
+            const types = ['apple', 'banana', 'lemon', 'grape', 'strawberry'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            const size = 50 + Math.random() * 40;
+            
+            fruits.push({
+                x: Math.random() * (canvas.width - size),
+                y: -size,
+                width: size,
+                height: size,
+                speed: 1 + Math.random() * 1.5,
+                type: type,
+                emoji: getFruitEmoji(type)
+            });
+        }
+
+        function getFruitEmoji(type) {
+            const emojis = {
+                apple: '🍎',
+                banana: '🍌',
+                lemon: '🍋',
+                grape: '🍇',
+                strawberry: '🍓'
+            };
+            return emojis[type] || '🍎';
+        }
+
+        // ✅ Рисуем небо: солнце и облака
+        function drawSky() {
+            // ☀️ Солнце
+            ctx.save();
+            ctx.shadowColor = 'rgba(255, 223, 0, 0.2)';
+            ctx.shadowBlur = 30;
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.arc(80, 80, 40, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            // ☁️ Облака
+            const clouds = [
+                { x: 150, y: 100, size: 1.0 },
+                { x: 500, y: 130, size: 1.3 },
+                { x: 300, y: 80, size: 0.9 }
+            ];
+
+            clouds.forEach(cloud => {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+                ctx.beginPath();
+                ctx.arc(cloud.x, cloud.y, 22 * cloud.size, 0, Math.PI * 2);
+                ctx.arc(cloud.x - 18 * cloud.size, cloud.y - 8 * cloud.size, 16 * cloud.size, 0, Math.PI * 2);
+                ctx.arc(cloud.x + 18 * cloud.size, cloud.y - 6 * cloud.size, 18 * cloud.size, 0, Math.PI * 2);
+                ctx.arc(cloud.x + 5 * cloud.size, cloud.y + 8 * cloud.size, 14 * cloud.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        // ✅ Плетёная корзинка
+        function drawBasket() {
+            const x = basket.x;
+            const y = basket.y;
+            const w = basket.width;
+            const h = basket.height;
+
+            const basketColor = '#D2B48C';
+            const edgeColor = '#A67C52';
+            const shadowColor = 'rgba(0,0,0,0.15)';
+
+            ctx.shadowColor = shadowColor;
+            ctx.shadowBlur = 10;
+            ctx.shadowOffsetY = 5;
+            ctx.fillStyle = basketColor;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + w, y);
+            ctx.quadraticCurveTo(x + w + 10, y + h / 2, x + w, y + h);
+            ctx.quadraticCurveTo(x - 10, y + h / 2, x, y + h);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = edgeColor;
+            ctx.fillRect(x - 5, y - 8, w + 10, 8);
+
+            ctx.strokeStyle = edgeColor;
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            for (let i = 1; i <= 4; i++) {
+                const yPos = y + (i * h / 5);
+                ctx.beginPath();
+                ctx.moveTo(x - 2, yPos);
+                ctx.lineTo(x + w + 2, yPos);
+                ctx.stroke();
+            }
+
+            ctx.lineWidth = 2;
+            for (let i = 0; i <= 8; i++) {
+                const xPos = x + (i * w / 8);
+                ctx.beginPath();
+                ctx.moveTo(xPos, y);
+                ctx.quadraticCurveTo(
+                    xPos + (i % 2 === 0 ? -3 : 3),
+                    y + h / 2,
+                    xPos,
+                    y + h
+                );
+                ctx.strokeStyle = edgeColor;
+                ctx.stroke();
+            }
+
+            ctx.strokeStyle = '#E6D6C2';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x, y + h);
+            ctx.quadraticCurveTo(x - 8, y + h / 2, x, y);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(x + w, y + h);
+            ctx.quadraticCurveTo(x + w + 8, y + h / 2, x + w, y);
+            ctx.stroke();
+
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
+        }
+
+        function drawFruits() {
+            fruits.forEach(fruit => {
+                if (fruitImages[fruit.type] && fruitImages[fruit.type].complete) {
+                    ctx.drawImage(fruitImages[fruit.type], fruit.x, fruit.y, fruit.width, fruit.height);
+                } else {
+                    ctx.font = `${fruit.width}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(fruit.emoji, fruit.x + fruit.width/2, fruit.y + fruit.height/2);
+                }
+            });
+        }
+
+        function update() {
+            for (let i = fruits.length - 1; i >= 0; i--) {
+                fruits[i].y += fruits[i].speed;
+                
+                // ✅ Фрукт пойман — просто удаляем
+                if (fruits[i].y + fruits[i].height > basket.y &&
+                    fruits[i].x + fruits[i].width > basket.x &&
+                    fruits[i].x < basket.x + basket.width) {
+                    fruits.splice(i, 1);
+                    score += 1;
+                    updateScore();
+                    
+                    if (score >= 5 && score < 50 && score > lastQuizScore && score % 5 === 0) {
+                        showQuiz();
+                        lastQuizScore = score;
+                    }
+                    
+                    if (score >= 50) {
+                        winGame();
+                    }
+                }
+                // ❌ Фрукт упущен
+                else if (fruits[i].y > canvas.height) {
+                    fruits.splice(i, 1);
+                    lives--;
+                    misses++;
+                    updateLives();
+                    updateMisses();
+                    
+                    if (lives <= 0) {
+                        gameOver();
+                    }
+                }
+            }
+            
+            if (!quizActive && Date.now() - lastFruitTime > 1000 / gameSpeed) {
+                createFruit();
+                lastFruitTime = Date.now();
+            }
+        }
+
+        function showQuiz() {
+            quizActive = true;
+            document.getElementById('quizOverlay').style.display = 'flex';
+            
+            const quizIndex = Math.floor(score / 5) - 1;
+            // ✅ Используем перемешанные вопросы!
+            const questionData = shuffledQuizQuestions[quizIndex % shuffledQuizQuestions.length];
+            
+            document.getElementById('quizQuestion').textContent = questionData.question;
+            
+            const optionsContainer = document.getElementById('quizOptions');
+            optionsContainer.innerHTML = '';
+            
+            questionData.options.forEach(option => {
+                const optionElement = document.createElement('div');
+                optionElement.className = 'quiz-option';
+                optionElement.textContent = option;
+                optionElement.onclick = () => checkQuizAnswer(option, questionData.answer);
+                optionsContainer.appendChild(optionElement);
+            });
+        }
+
+        function checkQuizAnswer(selectedAnswer, correctAnswer) {
+            if (selectedAnswer === correctAnswer) {
+                score += 5;
+                updateScore();
+            } else {
+                score = Math.max(0, score - 5);
+                updateScore();
+            }
+            
+            document.getElementById('quizOverlay').style.display = 'none';
+            quizActive = false;
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            alert(`Game Over! Your score: ${score}, misses: ${misses}`);
+            document.getElementById('startScreen').style.display = 'flex';
+        }
+
+        function winGame() {
+            gameRunning = false;
+            winAnimation = true;
+            document.getElementById('winScreen').style.display = 'flex';
+            createFireworks();
+        }
+
+        function createFireworks() {
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    if (winAnimation) {
+                        createFirework();
+                    }
+                }, i * 100);
+            }
+        }
+
+        function createFirework() {
+            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+            const particles = [];
+            
+            for (let i = 0; i < 50; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height / 2,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    life: 100
+                });
+            }
+            
+            fireworks.push(particles);
+        }
+
+        function drawFireworks() {
+            fireworks.forEach((particles, fireworkIndex) => {
+                particles.forEach((particle, particleIndex) => {
+                    if (particle.life > 0) {
+                        ctx.fillStyle = particle.color;
+                        ctx.globalAlpha = particle.life / 100;
+                        ctx.beginPath();
+                        ctx.arc(particle.x, particle.y, 3, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        particle.x += particle.vx;
+                        particle.y += particle.vy;
+                        particle.vy += 0.1;
+                        particle.life--;
+                    }
+                });
+                
+                if (particles.every(p => p.life <= 0)) {
+                    fireworks.splice(fireworkIndex, 1);
+                }
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        function gameLoop() {
+            if (!gameRunning) return;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            drawSky(); // ☀️☁️
+            
+            if (!quizActive) {
+                update(); // ✅ Без анимации прыжка
+            }
+            
+            drawFruits();
+            drawBasket();
+            if (winAnimation) {
+                drawFireworks();
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (!gameRunning || quizActive) return;
+            if (e.key === 'ArrowLeft') basket.x = Math.max(0, basket.x - 20);
+            else if (e.key === 'ArrowRight') basket.x = Math.min(canvas.width - basket.width, basket.x + 20);
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!gameRunning || quizActive) return;
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            basket.x = Math.max(0, Math.min(canvas.width - basket.width, mouseX - basket.width / 2));
+        });
+    </script>
+	<!-- Код для связи с родительским окном -->
+<script>
+// ============================================
+// КОД ДЛЯ СВЯЗИ С РОДИТЕЛЬСКИМ ОКНОМ
+// Вставьте этот код в конец файла, перед </body>
+// ============================================
+
+// Безопасная проверка завершения игры
+function checkGameCompletion() {
+    // 1. Проверяем переменную winAnimation (из основного скрипта игры)
+    if (typeof winAnimation !== 'undefined' && winAnimation === true) {
+        return true;
+    }
+    
+    // 2. Проверяем экран победы
+    const winScreen = document.getElementById('winScreen');
+    if (winScreen && winScreen.style.display === 'flex') {
+        return true;
+    }
+    
+    // 3. Проверяем переменную gameRunning
+    if (typeof gameRunning !== 'undefined' && gameRunning === false && 
+        typeof winAnimation !== 'undefined' && winAnimation === true) {
+        return true;
+    }
+    
+    // 4. Проверяем текст на экране победы
+    const winScreenElement = document.getElementById('winScreen');
+    if (winScreenElement && winScreenElement.style.display !== 'none' &&
+        winScreenElement.innerHTML.includes('Congratulations')) {
+        return true;
+    }
+    
+    // 5. Безопасно проверяем score (если есть доступ к переменной)
+    try {
+        if (typeof score !== 'undefined' && score >= 50) {
+            // Дополнительно проверяем, что игра действительно закончена
+            if (typeof gameRunning !== 'undefined' && gameRunning === false) {
+                return true;
+            }
+        }
+    } catch (e) {
+        // Игнорируем ошибку, если переменная недоступна
+    }
+    
+    return false;
+}
+
+// Основная функция завершения игры
+function notifyGameCompletion() {
+    console.log('Fruit Catch Game completion detected');
+    
+    try {
+        // Отправляем сообщение родителю
+        window.parent.postMessage({ 
+            type: 'GAME_COMPLETED', 
+            success: true,
+            gameName: 'tablet',
+            timestamp: new Date().toISOString()
+        }, '*');
+        
+        // Показываем поздравление
+        showCongratulations();
+        
+        return true;
+    } catch (error) {
+        console.error('Error notifying parent:', error);
+        showCongratulations();
+        return false;
+    }
+}
+
+// Перехватываем оригинальную функцию winGame
+const originalWinGame = typeof winGame !== 'undefined' ? winGame : null;
+if (originalWinGame) {
+    window.winGame = function() {
+        console.log('winGame intercepted');
+        
+        // Вызываем оригинальную функцию
+        const result = originalWinGame.apply(this, arguments);
+        
+        // Уведомляем о завершении через 2 секунды
+        setTimeout(() => {
+            notifyGameCompletion();
+        }, 2000);
+        
+        return result;
+    };
+}
+
+// Перехватываем кнопку Play Again
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('start-btn') && 
+        e.target.textContent.includes('Play Again')) {
+        console.log('Play Again button intercepted');
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Показываем поздравление вместо перезапуска
+        notifyGameCompletion();
+        
+        return false;
+    }
+}, true);
+
+// Перехватываем функцию resetGame
+const originalResetGame = typeof resetGame !== 'undefined' ? resetGame : null;
+if (originalResetGame) {
+    window.resetGame = function() {
+        console.log('resetGame intercepted');
+        
+        // Показываем поздравление вместо перезапуска
+        notifyGameCompletion();
+        
+        // Не вызываем оригинальную функцию
+        return;
+    };
+}
+
+// Показываем красивый экран поздравления
+function showCongratulations() {
+    // Проверяем, не показывается ли уже поздравление
+    if (document.getElementById('congratulations-overlay')) {
+        return;
+    }
+    
+    // Создаем оверлей
+    const overlay = document.createElement('div');
+    overlay.id = 'congratulations-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 999999;
+        color: white;
+        font-family: 'Arial', sans-serif;
+        text-align: center;
+        padding: 20px;
+        animation: fadeIn 0.5s ease-out;
+    `;
+    
+    // Создаем стили для анимаций
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Содержимое поздравления
+    overlay.innerHTML = `
+        <div style="font-size: 80px; margin-bottom: 20px; animation: bounce 2s infinite;">
+            🎉
+        </div>
+        <h1 style="font-size: 42px; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
+            Congratulations!
+        </h1>
+        <p style="font-size: 24px; margin-bottom: 30px; max-width: 600px; line-height: 1.5;">
+            You successfully caught 50 fruits!<br>
+            Amazing work, kitty!
+        </p>
+        <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; margin: 20px 0; backdrop-filter: blur(10px);">
+            <p style="font-size: 18px; margin: 10px 0;">🍎 Fruit catching completed!</p>
+            <p style="font-size: 18px; margin: 10px 0;">⭐ Perfect score: 50 points!</p>
+            <p style="font-size: 18px; margin: 10px 0;">🐱 Your teacher will be proud!</p>
+        </div>
+        <button id="backButton" style="
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 18px 50px;
+            font-size: 22px;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: all 0.3s;
+            font-weight: bold;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+            animation: pulse 2s infinite;
+        ">
+            🏫 Back to Classroom
+        </button>
+        <p style="margin-top: 20px; font-size: 16px; color: rgba(255,255,255,0.8);">
+            Press ESC or click the button above to return
+        </p>
+    `;
+    
+    // Добавляем на страницу
+    document.body.appendChild(overlay);
+    
+    // Скрываем стандартный экран победы, если он есть
+    const winScreen = document.getElementById('winScreen');
+    if (winScreen) {
+        winScreen.style.display = 'none';
+    }
+    
+    // Обработчик для кнопки Back
+    document.getElementById('backButton').addEventListener('click', function() {
+        this.style.background = '#229954';
+        this.style.transform = 'scale(0.95)';
+        
+        // Пытаемся закрыть игру через родительское окно
+        try {
+            window.parent.postMessage({ 
+                type: 'CLOSE_GAME',
+                gameName: 'tablet'
+            }, '*');
+        } catch (error) {
+            console.log('Could not notify parent, closing locally');
+            overlay.style.opacity = '0';
+            overlay.style.transition = 'opacity 0.5s';
+            setTimeout(() => {
+                overlay.remove();
+                // Можем показать сообщение для локального тестирования
+                if (window === window.top) {
+                    alert('Game completed! In the full version, this would return to the classroom.');
+                }
+            }, 500);
+        }
+    });
+    
+    // Обработчик клавиши Escape
+    const escapeHandler = function(e) {
+        if (e.key === 'Escape') {
+            document.getElementById('backButton').click();
+        }
+    };
+    document.addEventListener('keydown', escapeHandler);
+    
+    // Блокируем прокрутку
+    document.body.style.overflow = 'hidden';
+    
+    // Останавливаем игру, если она еще работает
+    if (typeof gameRunning !== 'undefined') {
+        gameRunning = false;
+    }
+}
+
+// Простой мониторинг - только перехват функций и кнопок
+function initializeGameCompletionHandler() {
+    console.log('Fruit Catch Game completion handler initialized');
+    
+    // Не используем интервал проверки, чтобы игра не закрывалась раньше времени
+    // Вместо этого полагаемся на перехват функций winGame и resetGame
+    
+    // Добавляем глобальную функцию для ручного вызова (для тестирования)
+    window.completeGame = notifyGameCompletion;
+}
+
+// Запускаем при загрузке
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeGameCompletionHandler);
+} else {
+    initializeGameCompletionHandler();
+}
+
+console.log('Fruit Catch Game completion handler loaded');
+</script>
+
+<style>
+/* Дополнительные стили для кнопок в игре */
+#congratulations-overlay button:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.3) !important;
+}
+
+#congratulations-overlay button:active {
+    transform: translateY(0) !important;
+}
+</style>
+</body>
+</html>

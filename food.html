@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Vocabulary Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(45deg, #FFE5B4, #FFCCCB, #E6E6FA, #98FB98);
+            min-height: 100vh;
+            padding: 10px;
+            overflow-x: hidden;
+            animation: gradientShift 8s ease infinite;
+            background-size: 400% 400%;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Компактный контейнер для встраивания */
+        .game-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 15px;
+            position: relative;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 3px solid #FFD93D;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .game-title {
+            font-size: 1.8rem;
+            color: #FF6B6B;
+            text-shadow: 2px 2px 0px #FFD93D;
+            margin: 0;
+        }
+
+        .chef-character {
+            font-size: 2.5rem;
+            margin: 10px 0;
+        }
+
+        .progress-container {
+            background: white;
+            border-radius: 15px;
+            padding: 10px;
+            margin: 15px 0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border: 2px solid #FFD93D;
+        }
+
+        .progress-text {
+            font-size: 1.1rem;
+            color: #FF6B6B;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .stars-container {
+            display: flex;
+            justify-content: center;
+            gap: 3px;
+            flex-wrap: wrap;
+        }
+
+        .star {
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .star.filled {
+            color: #FFD93D;
+            animation: starPulse 0.5s ease;
+        }
+
+        .star.empty {
+            color: #DDD;
+        }
+
+        @keyframes starPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .game-slide {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+            border: 4px solid #6BCF7F;
+            text-align: center;
+            position: relative;
+        }
+
+        .food-image-container {
+            width: 100%;
+            max-width: 300px;
+            height: 180px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #FFE5B4, #FFCCCB);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #FF6B6B;
+            position: relative;
+        }
+
+        .food-emoji {
+            font-size: 5rem;
+            animation: foodBounce 2s ease-in-out infinite;
+        }
+
+        @keyframes foodBounce {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.1) rotate(2deg); }
+        }
+
+        .word-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .word-card {
+            background: linear-gradient(135deg, #FF6B6B, #FFD93D);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            padding: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .word-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        .word-card.correct {
+            animation: correctAnswer 0.8s ease;
+            background: linear-gradient(135deg, #6BCF7F, #4D7C0F) !important;
+        }
+
+        .word-card.wrong {
+            animation: wrongAnswer 0.5s ease;
+            background: linear-gradient(135deg, #FF6B6B, #DC143C) !important;
+        }
+
+        @keyframes correctAnswer {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes wrongAnswer {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .victory-screen {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #FFD93D, #FF6B6B, #6BCF7F);
+            border-radius: 15px;
+            margin: 15px 0;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            border: 4px solid white;
+        }
+
+        .victory-title {
+            font-size: 1.8rem;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin-bottom: 15px;
+        }
+
+        .score-display {
+            font-size: 1.5rem;
+            color: white;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+
+        .badge {
+            font-size: 3rem;
+            margin: 15px 0;
+        }
+
+        .play-again-btn {
+            background: linear-gradient(135deg, #6BCF7F, #4D7C0F);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            padding: 12px 24px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            margin: 10px;
+        }
+
+        .play-again-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        .start-screen {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            margin: 15px 0;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+            border: 4px solid #FFD93D;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #FF6B6B, #FFD93D);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+        }
+
+        .start-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+        }
+
+        .instructions {
+            font-size: 1rem;
+            color: #333;
+            margin: 15px 0;
+            line-height: 1.5;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Адаптивность для очень маленьких экранов */
+        @media (max-width: 480px) {
+            .game-container {
+                padding: 10px;
+            }
+            
+            .game-title {
+                font-size: 1.5rem;
+            }
+            
+            .food-emoji {
+                font-size: 4rem;
+            }
+            
+            .food-image-container {
+                max-width: 250px;
+                height: 150px;
+            }
+            
+            .word-options {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .word-card {
+                font-size: 1.1rem;
+                padding: 12px;
+            }
+            
+            .victory-title {
+                font-size: 1.5rem;
+            }
+            
+            .play-again-btn, .start-btn {
+                font-size: 1rem;
+                padding: 10px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1 class="game-title" id="gameTitle">Food Vocabulary Game 🍕</h1>
+            <div class="chef-character">👨‍🍳</div>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="startScreen" class="start-screen">
+            <h2>Welcome to Food Game!</h2>
+            <div class="instructions">
+                <p><strong>How to Play:</strong></p>
+                <p>1. Look at the food picture</p>
+                <p>2. Choose the correct English word</p>
+                <p>3. Collect stars for each right answer</p>
+                <p><strong>Learn 12 food words and become a vocabulary chef!</strong></p>
+            </div>
+            <button class="start-btn" onclick="startGame()">Start Game!</button>
+        </div>
+
+        <!-- Progress Container -->
+        <div id="progressContainer" class="progress-container hidden">
+            <div class="progress-text" id="progressText">
+                Challenge 1 of 12
+            </div>
+            <div class="stars-container" id="starsContainer">
+                <!-- Stars will be generated here -->
+            </div>
+        </div>
+
+        <!-- Game Slide -->
+        <div id="gameSlide" class="game-slide hidden">
+            <div class="food-image-container">
+                <div class="food-emoji" id="foodEmoji">🍎</div>
+            </div>
+            <div class="word-options" id="wordOptions">
+                <!-- Word cards will be generated here -->
+            </div>
+        </div>
+
+        <!-- Victory Screen -->
+        <div id="victoryScreen" class="victory-screen hidden">
+            <h1 class="victory-title">YOU DID IT! 🎉</h1>
+            <div class="score-display" id="finalScore">
+                YOUR SCORE: 0 / 12
+            </div>
+            <div class="badge" id="badge">🏅</div>
+            <div id="badgeText" style="font-size: 1.2rem; color: white; font-weight: bold; margin: 10px 0;">
+                Great Job!
+            </div>
+            <div>
+                <button class="play-again-btn" onclick="startGame()">Play Again</button>
+                <button class="play-again-btn" onclick="showStartScreen()" style="background: linear-gradient(135deg, #A8E6CF, #7B68EE);">Back to Menu</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game data
+        const foodWords = [
+            { word: 'apple', emoji: '🍎', wrongWords: ['banana', 'car', 'tree'] },
+            { word: 'banana', emoji: '🍌', wrongWords: ['apple', 'house', 'book'] },
+            { word: 'pizza', emoji: '🍕', wrongWords: ['cake', 'dog', 'chair'] },
+            { word: 'ice cream', emoji: '🍦', wrongWords: ['milk', 'sun', 'ball'] },
+            { word: 'sandwich', emoji: '🥪', wrongWords: ['cookie', 'cat', 'flower'] },
+            { word: 'cookie', emoji: '🍪', wrongWords: ['juice', 'bird', 'pencil'] },
+            { word: 'milk', emoji: '🥛', wrongWords: ['cake', 'fish', 'hat'] },
+            { word: 'juice', emoji: '🧃', wrongWords: ['cheese', 'moon', 'shoe'] },
+            { word: 'cake', emoji: '🍰', wrongWords: ['egg', 'star', 'door'] },
+            { word: 'carrot', emoji: '🥕', wrongWords: ['pizza', 'cloud', 'key'] },
+            { word: 'cheese', emoji: '🧀', wrongWords: ['sandwich', 'lamp', 'boat'] },
+            { word: 'egg', emoji: '🥚', wrongWords: ['carrot', 'rainbow', 'clock'] }
+        ];
+
+        // Game state
+        let currentQuestion = 0;
+        let score = 0;
+        let isAnswering = false;
+
+        // Shuffle array function
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Generate stars display
+        function generateStars() {
+            const starsContainer = document.getElementById('starsContainer');
+            starsContainer.innerHTML = '';
+            
+            for (let i = 0; i < 12; i++) {
+                const star = document.createElement('span');
+                star.className = i < score ? 'star filled' : 'star empty';
+                star.textContent = '⭐';
+                starsContainer.appendChild(star);
+            }
+        }
+
+        // Start game
+        function startGame() {
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('victoryScreen').classList.add('hidden');
+            
+            // Reset game state
+            currentQuestion = 0;
+            score = 0;
+            
+            // Shuffle words for new game
+            shuffleArray(foodWords);
+            
+            document.getElementById('progressContainer').classList.remove('hidden');
+            document.getElementById('gameSlide').classList.remove('hidden');
+            
+            generateStars();
+            showQuestion();
+        }
+
+        // Show current question
+        function showQuestion() {
+            if (currentQuestion >= foodWords.length) {
+                endGame();
+                return;
+            }
+
+            const currentFood = foodWords[currentQuestion];
+            
+            // Update progress
+            document.getElementById('progressText').textContent = 
+                `Challenge ${currentQuestion + 1} of ${foodWords.length}`;
+            
+            // Update food image
+            document.getElementById('foodEmoji').textContent = currentFood.emoji;
+            
+            // Create word options
+            const options = [currentFood.word, ...currentFood.wrongWords];
+            shuffleArray(options);
+            
+            const wordOptionsContainer = document.getElementById('wordOptions');
+            wordOptionsContainer.innerHTML = '';
+            
+            options.forEach((word) => {
+                const button = document.createElement('button');
+                button.className = 'word-card';
+                button.textContent = word;
+                button.onclick = () => selectAnswer(word, currentFood.word, button);
+                wordOptionsContainer.appendChild(button);
+            });
+            
+            isAnswering = false;
+        }
+
+        // Handle answer selection
+        function selectAnswer(selectedWord, correctWord, buttonElement) {
+            if (isAnswering) return;
+            isAnswering = true;
+            
+            const isCorrect = selectedWord === correctWord;
+            
+            // Visual feedback
+            if (isCorrect) {
+                buttonElement.classList.add('correct');
+                score++;
+                generateStars();
+            } else {
+                buttonElement.classList.add('wrong');
+                
+                // Highlight correct answer
+                const buttons = document.querySelectorAll('.word-card');
+                buttons.forEach(btn => {
+                    if (btn.textContent === correctWord) {
+                        btn.classList.add('correct');
+                    }
+                });
+            }
+            
+            // Disable all buttons
+            const allButtons = document.querySelectorAll('.word-card');
+            allButtons.forEach(btn => btn.style.pointerEvents = 'none');
+            
+            // Move to next question after delay
+            setTimeout(() => {
+                currentQuestion++;
+                showQuestion();
+                
+                // Re-enable buttons
+                setTimeout(() => {
+                    const newButtons = document.querySelectorAll('.word-card');
+                    newButtons.forEach(btn => btn.style.pointerEvents = 'auto');
+                }, 100);
+            }, 1500);
+        }
+
+        // End game
+        function endGame() {
+            // Hide game elements
+            document.getElementById('progressContainer').classList.add('hidden');
+            document.getElementById('gameSlide').classList.add('hidden');
+            
+            // Show victory screen
+            document.getElementById('finalScore').textContent = `YOUR SCORE: ${score} / ${foodWords.length}`;
+            
+            // Determine badge and message
+            let badge, message;
+            if (score === foodWords.length) {
+                badge = '🏆';
+                message = 'PERFECT SCORE!';
+            } else if (score >= 9) {
+                badge = '🥇';
+                message = 'EXCELLENT!';
+            } else if (score >= 6) {
+                badge = '🥈';
+                message = 'GOOD JOB!';
+            } else {
+                badge = '🏅';
+                message = 'KEEP TRYING!';
+            }
+            
+            document.getElementById('badge').textContent = badge;
+            document.getElementById('badgeText').textContent = message;
+            
+            document.getElementById('victoryScreen').classList.remove('hidden');
+            
+            // Отправляем сообщение о завершении игры родительскому окну
+            if (window.parent) {
+                window.parent.postMessage({
+                    type: 'GAME_COMPLETED',
+                    gameName: 'tablet',
+                    success: true,
+                    score: score,
+                    total: foodWords.length
+                }, '*');
+            }
+        }
+
+        // Show start screen
+        function showStartScreen() {
+            document.getElementById('victoryScreen').classList.add('hidden');
+            document.getElementById('progressContainer').classList.add('hidden');
+            document.getElementById('gameSlide').classList.add('hidden');
+            document.getElementById('startScreen').classList.remove('hidden');
+        }
+
+        // Initialize game when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            // Shuffle words initially
+            shuffleArray(foodWords);
+        });
+    </script>
+</body>
+</html>

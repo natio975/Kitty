@@ -1,0 +1,1719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animal Memory - 2 Players</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #ff6b6b;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 5px;
+        }
+
+        h2 {
+            color: #4a4a4a;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+
+        .score-board {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 600px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .player {
+            text-align: center;
+            flex: 1;
+            padding: 10px;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .player.active {
+            background-color: #ffd166;
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .player-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .player-score {
+            font-size: 1.8rem;
+            color: #ff6b6b;
+        }
+
+        .game-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            max-width: 500px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            aspect-ratio: 1;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-front {
+            background-color: white;
+            color: #333;
+            transform: rotateY(180deg);
+            overflow: hidden;
+            padding: 5px;
+        }
+
+        .card-front img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 12px;
+        }
+
+        .card-back {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+            color: white;
+            font-size: 2rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        button {
+            background-color: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #ff5252;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal h3 {
+            color: #ff6b6b;
+            margin-bottom: 15px;
+            font-size: 1.8rem;
+        }
+
+        .modal p {
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .quiz-options {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .quiz-option {
+            padding: 10px 20px;
+            background-color: #a8edea;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.2rem;
+        }
+
+        .quiz-option:hover {
+            background-color: #7de0dc;
+            transform: scale(1.05);
+        }
+
+        .winner-modal .modal-content {
+            background: linear-gradient(135deg, #ffd166 0%, #ff9a9e 100%);
+        }
+
+        .winner-modal h3 {
+            color: #4a4a4a;
+            font-size: 2.5rem;
+        }
+
+        .winner-modal p {
+            font-size: 1.5rem;
+            margin: 20px 0;
+        }
+
+        #quiz-question {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 600px) {
+            .game-container {
+                grid-template-columns: repeat(4, 1fr);
+                max-width: 90vw;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .score-board {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                width: 100%;
+                max-width: 300px;
+            }
+            
+            .card-back {
+                font-size: 1.5rem;
+            }
+            
+            #quiz-question {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Animal Memory - 2 Players</h1>
+        <h2>Match pairs, answer the quiz to score!</h2>
+    </header>
+
+    <div class="score-board">
+        <div class="player player1 active">
+            <div class="player-name">Player 1</div>
+            <div class="player-score" id="player1-score">0</div>
+        </div>
+        <div class="player player2">
+            <div class="player-name">Player 2</div>
+            <div class="player-score" id="player2-score">0</div>
+        </div>
+    </div>
+
+    <div class="game-container" id="game-board">
+        <!-- Cards will be generated by JavaScript -->
+    </div>
+
+    <div class="controls">
+        <button id="new-game">New Game</button>
+        <button id="pass-turn">Pass Turn</button>
+        <button id="help">Help</button>
+    </div>
+
+    <!-- Quiz Modal -->
+    <div class="modal" id="quiz-modal">
+        <div class="modal-content">
+            <h3>Is/Are Quiz!</h3>
+            <p id="quiz-question">__ this a cat?</p>
+            <div class="quiz-options">
+                <div class="quiz-option" data-answer="is">is</div>
+                <div class="quiz-option" data-answer="are">are</div>
+                <div class="quiz-option" data-answer="am">am</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Winner Modal -->
+    <div class="modal winner-modal" id="winner-modal">
+        <div class="modal-content">
+            <h3>Game Over!</h3>
+            <p id="winner-message">Player 1 wins with 5 points!</p>
+            <button id="play-again">Play Again</button>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div class="modal" id="help-modal">
+        <div class="modal-content">
+            <h3>How to Play</h3>
+            <p><strong>Goal:</strong> Match all animal pairs and answer grammar questions correctly.</p>
+            <p><strong>Gameplay:</strong></p>
+            <ul style="text-align: left; margin: 15px 0;">
+                <li>Players take turns flipping two cards</li>
+                <li>If they match, answer an is/are/am question</li>
+                <li>Correct answer = 1 point and another turn</li>
+                <li>Wrong answer = no point, next player's turn</li>
+                <li>Game ends when all pairs are matched</li>
+            </ul>
+            <button id="close-help">Got it!</button>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        const gameState = {
+            cards: [],
+            flippedCards: [],
+            matchedPairs: 0,
+            currentPlayer: 1,
+            scores: {1: 0, 2: 0},
+            canFlip: true,
+            quizQuestions: [
+                { question: "__ this a cat?", answer: "is" },
+                { question: "They __ birds.", answer: "are" },
+                { question: "This __ a turtle.", answer: "is" },
+                { question: "We __ happy.", answer: "are" },
+                { question: "I __ a student.", answer: "am" },
+                { question: "She __ my friend.", answer: "is" },
+                { question: "You __ tall.", answer: "are" },
+                { question: "He __ running.", answer: "is" },
+                { question: "It __ raining.", answer: "is" },
+                { question: "They __ playing.", answer: "are" },
+                { question: "We __ going to the park.", answer: "are" },
+                { question: "I __ eating an apple.", answer: "am" }
+            ],
+            animals: [
+                { 
+                    name: "cat", 
+                    image: "https://i.postimg.cc/FFT89tdj/kot.png"
+                },
+                { 
+                    name: "dog", 
+                    image: "https://i.postimg.cc/Qxp6HRHj/sobaka.png"
+                },
+                { 
+                    name: "rabbit", 
+                    image: "https://i.postimg.cc/k5wFxCmq/krolik.png"
+                },
+                { 
+                    name: "bear", 
+                    image: "https://i.postimg.cc/mDXvpKQ4/1765198219.png"
+                },
+                { 
+                    name: "panda", 
+                    image: "https://i.postimg.cc/BQcgqHww/panda.png"
+                },
+                { 
+                    name: "tiger", 
+                    image: "https://i.postimg.cc/3RvXzvGJ/tigr.png"
+                },
+                { 
+                    name: "lion", 
+                    image: "https://i.postimg.cc/5tmpnv85/lev.png"
+                },
+                { 
+                    name: "giraffe", 
+                    image: "https://i.postimg.cc/13wvVbXQ/ziraf.png"
+                }
+            ],
+            imagesLoaded: 0,
+            totalImages: 16
+        };
+
+        // DOM Elements
+        const gameBoard = document.getElementById('game-board');
+        const player1Score = document.getElementById('player1-score');
+        const player2Score = document.getElementById('player2-score');
+        const player1Element = document.querySelector('.player1');
+        const player2Element = document.querySelector('.player2');
+        const newGameButton = document.getElementById('new-game');
+        const passTurnButton = document.getElementById('pass-turn');
+        const helpButton = document.getElementById('help');
+        const quizModal = document.getElementById('quiz-modal');
+        const quizQuestion = document.getElementById('quiz-question');
+        const quizOptions = document.querySelectorAll('.quiz-option');
+        const winnerModal = document.getElementById('winner-modal');
+        const winnerMessage = document.getElementById('winner-message');
+        const playAgainButton = document.getElementById('play-again');
+        const helpModal = document.getElementById('help-modal');
+        const closeHelpButton = document.getElementById('close-help');
+
+        // Initialize the game
+        function initGame() {
+            gameState.matchedPairs = 0;
+            gameState.currentPlayer = 1;
+            gameState.scores = {1: 0, 2: 0};
+            gameState.flippedCards = [];
+            gameState.canFlip = true;
+            gameState.imagesLoaded = 0;
+            
+            updateScores();
+            updatePlayerTurn();
+            createCards();
+        }
+
+        // Create and shuffle cards
+        function createCards() {
+            gameBoard.innerHTML = '';
+            gameState.cards = [];
+            
+            // Show loading state
+            gameBoard.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 20px;">Loading images... <div class="loading"></div></div>';
+            
+            // Create pairs of cards
+            const cardPairs = [];
+            gameState.animals.forEach(animal => {
+                cardPairs.push(animal, animal);
+            });
+            
+            // Shuffle cards
+            shuffleArray(cardPairs);
+            
+            // Create card elements
+            cardPairs.forEach((animal, index) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.dataset.index = index;
+                
+                const cardInner = document.createElement('div');
+                cardInner.className = 'card-inner';
+                
+                const cardFront = document.createElement('div');
+                cardFront.className = 'card-front';
+                
+                const img = document.createElement('img');
+                img.src = animal.image;
+                img.alt = animal.name;
+                img.onload = () => {
+                    gameState.imagesLoaded++;
+                    if (gameState.imagesLoaded === gameState.totalImages) {
+                        // All images loaded, enable game
+                        gameState.canFlip = true;
+                    }
+                };
+                img.onerror = () => {
+                    // If image fails to load, show emoji as fallback
+                    cardFront.innerHTML = `<span style="font-size: 2.5rem;">${getAnimalEmoji(animal.name)}</span>`;
+                    gameState.imagesLoaded++;
+                    if (gameState.imagesLoaded === gameState.totalImages) {
+                        gameState.canFlip = true;
+                    }
+                };
+                
+                cardFront.appendChild(img);
+                
+                const cardBack = document.createElement('div');
+                cardBack.className = 'card-back';
+                cardBack.textContent = '?';
+                
+                cardInner.appendChild(cardFront);
+                cardInner.appendChild(cardBack);
+                card.appendChild(cardInner);
+                
+                card.addEventListener('click', () => flipCard(card, index));
+                gameBoard.appendChild(card);
+                
+                gameState.cards.push({
+                    element: card,
+                    animal: animal,
+                    isFlipped: false,
+                    isMatched: false
+                });
+            });
+        }
+
+        // Get emoji fallback for animals
+        function getAnimalEmoji(animalName) {
+            const emojiMap = {
+                'cat': '🐱',
+                'dog': '🐶',
+                'rabbit': '🐰',
+                'bear': '🐻',
+                'panda': '🐼',
+                'tiger': '🐯',
+                'lion': '🦁',
+                'giraffe': '🦒'
+            };
+            return emojiMap[animalName] || '❓';
+        }
+
+        // Flip card function
+        function flipCard(cardElement, index) {
+            const card = gameState.cards[index];
+            
+            if (!gameState.canFlip || card.isFlipped || card.isMatched) return;
+            
+            // Flip the card
+            cardElement.classList.add('flipped');
+            card.isFlipped = true;
+            gameState.flippedCards.push(card);
+            
+            // Check if two cards are flipped
+            if (gameState.flippedCards.length === 2) {
+                gameState.canFlip = false;
+                
+                const card1 = gameState.flippedCards[0];
+                const card2 = gameState.flippedCards[1];
+                
+                // Check for match
+                if (card1.animal.name === card2.animal.name) {
+                    // Match found
+                    setTimeout(() => {
+                        card1.isMatched = true;
+                        card2.isMatched = true;
+                        gameState.matchedPairs++;
+                        
+                        // Show quiz
+                        showQuiz();
+                        
+                        gameState.flippedCards = [];
+                        gameState.canFlip = true;
+                    }, 1000);
+                } else {
+                    // No match
+                    setTimeout(() => {
+                        card1.element.classList.remove('flipped');
+                        card2.element.classList.remove('flipped');
+                        card1.isFlipped = false;
+                        card2.isFlipped = false;
+                        
+                        gameState.flippedCards = [];
+                        gameState.canFlip = true;
+                        
+                        // Switch player
+                        switchPlayer();
+                    }, 1500);
+                }
+            }
+        }
+
+        // Show quiz modal
+        function showQuiz() {
+            const randomQuestion = gameState.quizQuestions[
+                Math.floor(Math.random() * gameState.quizQuestions.length)
+            ];
+            
+            quizQuestion.textContent = randomQuestion.question;
+            quizModal.style.display = 'flex';
+            
+            // Store correct answer for comparison
+            quizModal.dataset.correctAnswer = randomQuestion.answer;
+        }
+
+        // Switch player turn
+        function switchPlayer() {
+            gameState.currentPlayer = gameState.currentPlayer === 1 ? 2 : 1;
+            updatePlayerTurn();
+        }
+
+        // Update player turn indicator
+        function updatePlayerTurn() {
+            if (gameState.currentPlayer === 1) {
+                player1Element.classList.add('active');
+                player2Element.classList.remove('active');
+            } else {
+                player1Element.classList.remove('active');
+                player2Element.classList.add('active');
+            }
+            
+            // ARIA live update for accessibility
+            const ariaLiveRegion = document.createElement('div');
+            ariaLiveRegion.setAttribute('aria-live', 'polite');
+            ariaLiveRegion.setAttribute('aria-atomic', 'true');
+            ariaLiveRegion.style.position = 'absolute';
+            ariaLiveRegion.style.left = '-10000px';
+            ariaLiveRegion.textContent = `Player ${gameState.currentPlayer}'s turn`;
+            document.body.appendChild(ariaLiveRegion);
+            setTimeout(() => {
+                document.body.removeChild(ariaLiveRegion);
+            }, 100);
+        }
+
+        // Update scores display
+        function updateScores() {
+            player1Score.textContent = gameState.scores[1];
+            player2Score.textContent = gameState.scores[2];
+        }
+
+        // Check for game end
+        function checkGameEnd() {
+            if (gameState.matchedPairs === gameState.animals.length) {
+                // Game over
+                let winner;
+                if (gameState.scores[1] > gameState.scores[2]) {
+                    winner = "Player 1";
+                } else if (gameState.scores[2] > gameState.scores[1]) {
+                    winner = "Player 2";
+                } else {
+                    winner = "It's a tie!";
+                }
+                
+                winnerMessage.textContent = `${winner} wins with ${Math.max(gameState.scores[1], gameState.scores[2])} points!`;
+                winnerModal.style.display = 'flex';
+            }
+        }
+
+        // Utility function to shuffle array
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Event Listeners
+        newGameButton.addEventListener('click', initGame);
+        
+        passTurnButton.addEventListener('click', () => {
+            if (gameState.flippedCards.length === 0) {
+                switchPlayer();
+            }
+        });
+        
+        helpButton.addEventListener('click', () => {
+            helpModal.style.display = 'flex';
+        });
+        
+        closeHelpButton.addEventListener('click', () => {
+            helpModal.style.display = 'none';
+        });
+        
+        playAgainButton.addEventListener('click', () => {
+            winnerModal.style.display = 'none';
+            initGame();
+        });
+        
+        // Quiz option selection
+        quizOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                const selectedAnswer = option.dataset.answer;
+                const correctAnswer = quizModal.dataset.correctAnswer;
+                
+                if (selectedAnswer === correctAnswer) {
+                    // Correct answer
+                    gameState.scores[gameState.currentPlayer]++;
+                    updateScores();
+                    
+                    // Show correct feedback
+                    option.style.backgroundColor = '#90EE90';
+                    setTimeout(() => {
+                        quizModal.style.display = 'none';
+                        option.style.backgroundColor = '';
+                        
+                        // Player continues their turn
+                        checkGameEnd();
+                    }, 1000);
+                } else {
+                    // Wrong answer
+                    option.style.backgroundColor = '#FFB6C1';
+                    setTimeout(() => {
+                        quizModal.style.display = 'none';
+                        option.style.backgroundColor = '';
+                        
+                        // Switch player
+                        switchPlayer();
+                        checkGameEnd();
+                    }, 1000);
+                }
+            });
+        });
+        
+        // Close modals when clicking outside
+        window.addEventListener('click', (e) => {
+            if (e.target === quizModal) {
+                quizModal.style.display = 'none';
+            }
+            if (e.target === winnerModal) {
+                winnerModal.style.display = 'none';
+            }
+            if (e.target === helpModal) {
+                helpModal.style.display = 'none';
+            }
+        });
+        
+        // Close modals with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                quizModal.style.display = 'none';
+                winnerModal.style.display = 'none';
+                helpModal.style.display = 'none';
+            }
+        });
+
+        // Initialize the game when page loads
+        window.addEventListener('DOMContentLoaded', initGame);
+    </script>
+	<script>
+  // Когда нужно отправить результат
+  const result = { score: 100, completed: true };
+  
+  // Вариант 1: через opener
+  if (window.opener) {
+    window.opener.receiveResult(result);
+    window.close();
+  }
+  
+  // Вариант 2: через postMessage (более универсальный)
+  window.parent.postMessage({
+    type: 'MODAL_SUBMIT',
+    data: result
+  }, '*');
+</script>
+<!-- Код для связи с родительским окном -->
+<script>
+// ============================================
+// КОД ДЛЯ СВЯЗИ С РОДИТЕЛЬСКИМ ОКНОМ
+// Вставьте этот код в конец файла, перед </body>
+// ============================================
+
+// Конфигурация для разных игр
+const gameConfig = {
+    'AnimalMemory': {
+        name: 'board',
+        completionCondition: function() {
+            // Для AnimalMemory: проверяем победу
+            if (typeof gameWon !== 'undefined' && gameWon) return true;
+            
+            // Ищем элементы победы
+            const winElements = document.querySelectorAll('.win, .victory, .success, [class*="win"], [class*="victory"]');
+            if (winElements.length > 0) return true;
+            
+            // Проверяем текст на странице
+            if (document.body.innerText.includes('You win') || 
+                document.body.innerText.includes('Congratulations') ||
+                document.body.innerText.includes('Well done')) {
+                return true;
+            }
+            
+            return false;
+        }
+    },
+    'GameFruit': {
+        name: 'tablet',
+        completionCondition: function() {
+            // Для GameFruit: проверяем счет или завершение
+            if (typeof score !== 'undefined' && score >= 100) return true;
+            if (typeof gameCompleted !== 'undefined' && gameCompleted) return true;
+            
+            // Ищем элементы завершения
+            const completeElements = document.querySelectorAll('.complete, .finished, .end');
+            if (completeElements.length > 0) return true;
+            
+            // Проверяем текст
+            if (document.body.innerText.includes('Level completed') || 
+                document.body.innerText.includes('Game completed') ||
+                document.body.innerText.includes('Finished')) {
+                return true;
+            }
+            
+            return false;
+        }
+    },
+    'IrregularVerbs': {
+        name: 'play',
+        completionCondition: function() {
+            // Для IrregularVerbs Maze: проверяем завершение
+            if (typeof mazeCompleted !== 'undefined' && mazeCompleted) return true;
+            if (typeof levelPassed !== 'undefined' && levelPassed) return true;
+            
+            // Ищем элементы завершения лабиринта
+            const mazeComplete = document.querySelectorAll('.maze-complete, .exit-reached, .finish');
+            if (mazeComplete.length > 0) return true;
+            
+            // Проверяем текст
+            if (document.body.innerText.includes('Maze completed') || 
+                document.body.innerText.includes('You escaped') ||
+                document.body.innerText.includes('Congratulations')) {
+                return true;
+            }
+            
+            return false;
+        }
+    }
+};
+
+// Определяем текущую игру
+function getCurrentGame() {
+    const url = window.location.href.toLowerCase();
+    const title = document.title.toLowerCase();
+    
+    if (url.includes('animalmemory') || title.includes('animal') || title.includes('memory')) {
+        return gameConfig['AnimalMemory'];
+    } else if (url.includes('gamefruit') || title.includes('fruit')) {
+        return gameConfig['GameFruit'];
+    } else if (url.includes('irregularverbs') || title.includes('maze') || title.includes('verbs')) {
+        return gameConfig['IrregularVerbs'];
+    }
+    
+    // По умолчанию
+    return {
+        name: 'unknown',
+        completionCondition: function() { return false; }
+    };
+}
+// Показываем красивый экран поздравления
+function showCongratulations() {
+    console.log('Showing congratulations screen');
+    
+    // Проверяем, не показывается ли уже поздравление
+    if (document.getElementById('congratulations-overlay')) {
+        console.log('Congratulations overlay already showing');
+        return;
+    }
+    
+    // Скрываем оригинальное модальное окно победы
+    const winnerModal = document.getElementById('winner-modal');
+    if (winnerModal) {
+        winnerModal.style.display = 'none';
+        console.log('Original winner modal hidden');
+    }
+    
+    // Создаем оверлей
+    const overlay = document.createElement('div');
+    overlay.id = 'congratulations-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 999999;
+        color: white;
+        font-family: 'Arial', sans-serif;
+        text-align: center;
+        padding: 20px;
+        animation: fadeIn 0.5s ease-out;
+    `;
+    
+    // Создаем стили для анимаций
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Получаем информацию о победителе из оригинальной игры
+    let winnerText = "Congratulations!";
+    try {
+        const winnerMessage = document.getElementById('winner-message');
+        if (winnerMessage) {
+            winnerText = winnerMessage.textContent || "Congratulations!";
+        }
+    } catch (e) {
+        console.log('Could not get winner message:', e);
+    }
+    
+    // Содержимое поздравления
+    overlay.innerHTML = `
+        <div style="font-size: 80px; margin-bottom: 20px; animation: bounce 2s infinite;">
+            🐾
+        </div>
+        <h1 style="font-size: 42px; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
+            ${winnerText}
+        </h1>
+        <p style="font-size: 24px; margin-bottom: 30px; max-width: 600px; line-height: 1.5;">
+            You matched all the animal pairs!<br>
+            Fantastic memory, kitty!
+        </p>
+        <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; margin: 20px 0; backdrop-filter: blur(10px);">
+            <p style="font-size: 18px; margin: 10px 0;">🧠 Memory game completed!</p>
+            <p style="font-size: 18px; margin: 10px 0;">⭐ All 8 pairs matched!</p>
+            <p style="font-size: 18px; margin: 10px 0;">🐱 Your teacher will be proud!</p>
+        </div>
+        <button id="backButton" style="
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 18px 50px;
+            font-size: 22px;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: all 0.3s;
+            font-weight: bold;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+            animation: pulse 2s infinite;
+        ">
+            🏫 Back to Classroom
+        </button>
+        <p style="margin-top: 20px; font-size: 16px; color: rgba(255,255,255,0.8);">
+            Press ESC or click the button above to return
+        </p>
+    `;
+    
+    // Добавляем на страницу
+    document.body.appendChild(overlay);
+    console.log('Congratulations overlay added');
+    
+    // Обработчик для кнопки Back
+    document.getElementById('backButton').addEventListener('click', function() {
+        console.log('Back button clicked');
+        this.style.background = '#229954';
+        this.style.transform = 'scale(0.95)';
+        
+        // Пытаемся закрыть игру через родительское окно
+        try {
+            window.parent.postMessage({ 
+                type: 'CLOSE_GAME',
+                gameName: 'board'
+            }, '*');
+            console.log('Close message sent to parent');
+        } catch (error) {
+            console.log('Could not notify parent, closing locally');
+            overlay.style.opacity = '0';
+            overlay.style.transition = 'opacity 0.5s';
+            setTimeout(() => {
+                overlay.remove();
+                // Можем показать сообщение для локального тестирования
+                if (window === window.top) {
+                    alert('Game completed! In the full version, this would return to the classroom.');
+                }
+            }, 500);
+        }
+    });
+    
+    // Обработчик клавиши Escape
+    const escapeHandler = function(e) {
+        if (e.key === 'Escape') {
+            document.getElementById('backButton').click();
+        }
+    };
+    document.addEventListener('keydown', escapeHandler);
+    
+    // Блокируем прокрутку
+    document.body.style.overflow = 'hidden';
+    console.log('Congratulations screen fully setup');
+}
+// Основная функция завершения игры
+function notifyGameCompletion() {
+    const game = getCurrentGame();
+    console.log('Game completion detected for:', game.name);
+    
+    try {
+        // Отправляем сообщение родителю
+        window.parent.postMessage({ 
+            type: 'GAME_COMPLETED', 
+            success: true,
+            gameName: game.name,
+            timestamp: new Date().toISOString()
+        }, '*');
+        
+        // Показываем поздравление
+        showCongratulations();
+        
+        // Возвращаем true для подтверждения
+        return true;
+    } catch (error) {
+        console.error('Error notifying parent:', error);
+        // Показываем поздравление даже при ошибке
+        showCongratulations();
+        return false;
+    }
+}
+
+// Показываем красивый экран поздравления
+function showCongratulations() {
+    // Удаляем предыдущий экран если есть
+    const existing = document.getElementById('congratulations-overlay');
+    if (existing) existing.remove();
+    
+    // Создаем оверлей
+    const overlay = document.createElement('div');
+    overlay.id = 'congratulations-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 99999;
+        color: white;
+        font-family: 'Arial', sans-serif;
+        text-align: center;
+        padding: 20px;
+        animation: fadeIn 0.5s ease-out;
+    `;
+    
+    // Анимация появления
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Содержимое поздравления
+    overlay.innerHTML = `
+        <div style="font-size: 80px; margin-bottom: 20px; animation: bounce 2s infinite;">
+            🎉
+        </div>
+        <h1 style="font-size: 42px; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
+            Congratulations!
+        </h1>
+        <p style="font-size: 24px; margin-bottom: 30px; max-width: 600px; line-height: 1.5;">
+            You have successfully completed the game!<br>
+            Well done, kitty!
+        </p>
+        <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; margin: 20px 0; backdrop-filter: blur(10px);">
+            <p style="font-size: 18px; margin: 10px 0;">🎮 Game completed successfully</p>
+            <p style="font-size: 18px; margin: 10px 0;">⭐ Great job!</p>
+            <p style="font-size: 18px; margin: 10px 0;">🐱 Your teacher will be proud!</p>
+        </div>
+        <button id="backButton" style="
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 18px 50px;
+            font-size: 22px;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: all 0.3s;
+            font-weight: bold;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+            animation: pulse 2s infinite;
+        ">
+            🏫 Back to Classroom
+        </button>
+        <p style="margin-top: 20px; font-size: 16px; color: rgba(255,255,255,0.8);">
+            Press ESC or click the button above to return
+        </p>
+    `;
+    
+    // Добавляем на страницу
+    document.body.appendChild(overlay);
+    
+    // Обработчик для кнопки Back
+    document.getElementById('backButton').addEventListener('click', function() {
+        this.style.background = '#229954';
+        this.style.transform = 'scale(0.95)';
+        
+        // Пытаемся закрыть игру через родительское окно
+        try {
+            window.parent.postMessage({ 
+                type: 'CLOSE_GAME',
+                gameName: getCurrentGame().name
+            }, '*');
+        } catch (error) {
+            console.log('Could not notify parent, closing locally');
+            overlay.style.opacity = '0';
+            overlay.style.transition = 'opacity 0.5s';
+            setTimeout(() => {
+                overlay.remove();
+                // Можем показать сообщение для локального тестирования
+                if (window === window.top) {
+                    alert('Game completed! In the full version, this would return to the classroom.');
+                }
+            }, 500);
+        }
+    });
+    
+    // Обработчик клавиши Escape
+    const escapeHandler = function(e) {
+        if (e.key === 'Escape') {
+            document.getElementById('backButton').click();
+            document.removeEventListener('keydown', escapeHandler);
+        }
+    };
+    document.addEventListener('keydown', escapeHandler);
+    
+    // Блокируем прокрутку
+    document.body.style.overflow = 'hidden';
+}
+
+// Мониторинг завершения игры
+function startCompletionMonitoring() {
+    const game = getCurrentGame();
+    console.log('Starting completion monitor for:', game.name);
+    
+    // Интервал проверки
+    const checkInterval = setInterval(() => {
+        if (game.completionCondition()) {
+            clearInterval(checkInterval);
+            setTimeout(() => {
+                notifyGameCompletion();
+            }, 1000); // Даем время на анимации игры
+        }
+    }, 1000);
+    
+    // Также перехватываем кнопки "Play Again"
+    document.addEventListener('click', function(e) {
+        const target = e.target;
+        const text = target.textContent || '';
+        const className = target.className || '';
+        
+        // Проверяем, является ли это кнопкой перезапуска
+        if (text.match(/play again|restart|replay|try again|next level|continue/gi) ||
+            className.match(/play-again|restart|replay|next-level|continue/gi)) {
+            
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            
+            console.log('Play Again button intercepted');
+            notifyGameCompletion();
+            
+            return false;
+        }
+    }, true); // Используем capture для перехвата
+    
+    // Перехватываем стандартные функции завершения
+    const originalFunctions = {};
+    const functionNames = ['endGame', 'gameOver', 'showResults', 'finishGame', 'completeGame', 'winGame'];
+    
+    functionNames.forEach(funcName => {
+        if (typeof window[funcName] === 'function') {
+            originalFunctions[funcName] = window[funcName];
+            window[funcName] = function(...args) {
+                console.log(`Intercepted ${funcName} call`);
+                
+                // Вызываем оригинальную функцию если нужно
+                let result;
+                if (originalFunctions[funcName]) {
+                    result = originalFunctions[funcName].apply(this, args);
+                }
+                
+                // Уведомляем о завершении
+                setTimeout(() => {
+                    notifyGameCompletion();
+                }, 1500);
+                
+                return result;
+            };
+        }
+    });
+    
+    // Также проверяем изменение URL hash (часто используется для завершения)
+    let lastHash = window.location.hash;
+    const hashCheck = setInterval(() => {
+        if (window.location.hash !== lastHash) {
+            lastHash = window.location.hash;
+            if (lastHash.includes('win') || lastHash.includes('complete') || lastHash.includes('finished')) {
+                clearInterval(hashCheck);
+                setTimeout(() => {
+                    notifyGameCompletion();
+                }, 1000);
+            }
+        }
+    }, 500);
+    
+    // Возвращаем функцию для остановки мониторинга
+    return () => {
+        clearInterval(checkInterval);
+    };
+}
+
+// Запускаем мониторинг при загрузке
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startCompletionMonitoring);
+} else {
+    startCompletionMonitoring();
+}
+
+// Для отладки
+console.log('Game completion handler loaded for:', getCurrentGame().name);
+
+    
+    // Обработчик клавиши Escape
+    const escapeHandler = function(e) {
+        if (e.key === 'Escape') {
+            document.getElementById('backButton').click();
+        }
+    };
+    document.addEventListener('keydown', escapeHandler);
+    
+    // Блокируем прокрутку
+    document.body.style.overflow = 'hidden';
+}
+
+// Перехватываем кнопки "Play Again" и "Restart"
+function interceptGameButtons() {
+    document.addEventListener('click', function(e) {
+        const target = e.target;
+        const text = (target.innerText || '').toLowerCase();
+        
+        // Только большие кнопки в центре экрана
+        const isLargeButton = target.offsetWidth > 100 && target.offsetHeight > 40;
+        const rect = target.getBoundingClientRect();
+        const isCentered = Math.abs(rect.left + rect.width/2 - window.innerWidth/2) < 200;
+        
+        if (isLargeButton && isCentered && (
+            text.includes('play again') || 
+            text.includes('restart') || 
+            text.includes('new game') ||
+            text.includes('try again')
+        )) {
+            console.log('Game restart button intercepted');
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Показываем поздравление вместо перезапуска
+            setTimeout(() => {
+                notifyGameCompletion();
+            }, 100);
+            
+            return false;
+        }
+    }, true); // Используем capture для надежности
+}
+
+// Перехватываем возможные функции завершения
+function interceptGameFunctions() {
+    // Попробуем перехватить common game functions
+    const functionNames = ['winGame', 'endGame', 'gameOver', 'showResults', 'completeGame'];
+    
+    functionNames.forEach(funcName => {
+        if (typeof window[funcName] === 'function') {
+            const originalFunc = window[funcName];
+            window[funcName] = function(...args) {
+                console.log(`Intercepted ${funcName} in Animal Memory`);
+                
+                // Вызываем оригинальную функцию
+                const result = originalFunc.apply(this, args);
+                
+                // Через 1.5 секунды показываем наше поздравление
+                setTimeout(() => {
+                    notifyGameCompletion();
+                }, 1500);
+                
+                return result;
+            };
+        }
+    });
+}
+
+// Мягкий мониторинг - проверяем только каждые 3 секунды
+function startGentleMonitoring() {
+    console.log('Starting gentle monitoring for Animal Memory');
+    
+    let checkCount = 0;
+    const maxChecks = 20; // Максимум 20 проверок (примерно 1 минута игры)
+    
+    const checkInterval = setInterval(() => {
+        checkCount++;
+        
+        // Прекращаем проверку после 1 минуты (на всякий случай)
+        if (checkCount > maxChecks) {
+            clearInterval(checkInterval);
+            console.log('Monitoring stopped after 1 minute');
+            return;
+        }
+        
+        // Проверяем завершение игры
+        if (checkAnimalMemoryCompletion()) {
+            clearInterval(checkInterval);
+            console.log('Game completion detected after', checkCount, 'checks');
+            
+            // Даем время для отображения оригинального экрана победы
+            setTimeout(() => {
+                notifyGameCompletion();
+            }, 2000);
+        }
+    }, 3000); // Проверяем только каждые 3 секунды!
+}
+
+// Инициализация обработчика завершения игры
+function initializeAnimalMemoryHandler() {
+    console.log('Animal Memory completion handler initialized');
+    
+    // 1. Перехватываем кнопки
+    interceptGameButtons();
+    
+    // 2. Перехватываем функции
+    interceptGameFunctions();
+    
+    // 3. Запускаем мягкий мониторинг с задержкой
+    setTimeout(() => {
+        startGentleMonitoring();
+    }, 5000); // Начинаем мониторинг только через 5 секунд после загрузки
+    
+    // 4. Для тестирования: добавляем глобальную функцию
+    window.completeAnimalGame = notifyGameCompletion;
+}
+
+// Запускаем при полной загрузке страницы
+window.addEventListener('load', function() {
+    // Даем игре время на инициализацию
+    setTimeout(initializeAnimalMemoryHandler, 1000);
+});
+
+console.log('Animal Memory completion handler loaded');
+</script>
+
+<style>
+/* Дополнительные стили */
+#congratulations-overlay button:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.3) !important;
+}
+
+#congratulations-overlay button:active {
+    transform: translateY(0) !important;
+}
+<!-- Код для связи с родительским окном -->
+<script>
+// ============================================
+// КОД ДЛЯ СВЯЗИ С РОДИТЕЛЬСКИМ ОКНОМ - Animal Memory
+// Вставьте этот код в конец файла, перед </body>
+// ============================================
+
+// Безопасная проверка завершения игры для Animal Memory
+function checkAnimalMemoryCompletion() {
+    console.log('Checking game completion...');
+    
+    // 1. Проверяем модальное окно победителя по ID
+    const winnerModal = document.getElementById('winner-modal');
+    console.log('Winner modal found:', winnerModal);
+    console.log('Winner modal display style:', winnerModal ? winnerModal.style.display : 'not found');
+    
+    if (winnerModal && winnerModal.style.display === 'flex') {
+        console.log('Game completed: winner modal is visible');
+        return true;
+    }
+    
+    // 2. Ищем текст "Game Over!" (который есть в вашей игре)
+    const winnerMessage = document.getElementById('winner-message');
+    if (winnerMessage) {
+        const text = winnerMessage.textContent || '';
+        console.log('Winner message text:', text);
+        
+        if (text.includes('wins with') || text.includes('Game Over')) {
+            console.log('Game completed: winner message found');
+            return true;
+        }
+    }
+    
+    // 3. Проверяем, все ли карточки совпали через глобальную переменную gameState
+    try {
+        if (typeof gameState !== 'undefined') {
+            console.log('Game state matchedPairs:', gameState.matchedPairs);
+            console.log('Game state total animals:', gameState.animals ? gameState.animals.length : 'undefined');
+            
+            if (gameState.matchedPairs === 8) { // В вашей игре 8 животных
+                console.log('Game completed: all pairs matched');
+                return true;
+            }
+        }
+    } catch (e) {
+        console.error('Error checking gameState:', e);
+    }
+    
+    // 4. Проверяем видимую кнопку "Play Again"
+    const playAgainButton = document.getElementById('play-again');
+    console.log('Play Again button found:', playAgainButton);
+    console.log('Play Again button visible:', playAgainButton ? playAgainButton.offsetParent !== null : 'not found');
+    
+    if (playAgainButton && playAgainButton.offsetParent !== null) {
+        console.log('Game completed: Play Again button is visible');
+        return true;
+    }
+    
+    // 5. Проверяем, есть ли текст "Game Over" на странице
+    const pageText = document.body.innerText || '';
+    if (pageText.includes('Game Over') && pageText.includes('wins with')) {
+        console.log('Game completed: Game Over text found on page');
+        return true;
+    }
+    
+    console.log('Game not completed yet');
+    return false;
+}
+
+// Основная функция завершения игры
+function notifyGameCompletion() {
+    console.log('Animal Memory Game completion detected');
+    
+    try {
+        // Отправляем сообщение родителю
+        window.parent.postMessage({ 
+            type: 'GAME_COMPLETED', 
+            success: true,
+            gameName: 'board', // Work at the Board
+            timestamp: new Date().toISOString()
+        }, '*');
+        
+        // Показываем поздравление
+        showCongratulations();
+        
+        return true;
+    } catch (error) {
+        console.error('Error notifying parent:', error);
+        showCongratulations();
+        return false;
+    }
+}
+
+// Показываем красивый экран поздравления
+function showCongratulations() {
+    console.log('Showing congratulations screen');
+    
+    // Проверяем, не показывается ли уже поздравление
+    if (document.getElementById('congratulations-overlay')) {
+        console.log('Congratulations overlay already showing');
+        return;
+    }
+    
+    // Скрываем оригинальное модальное окно победы
+    const winnerModal = document.getElementById('winner-modal');
+    if (winnerModal) {
+        winnerModal.style.display = 'none';
+        console.log('Original winner modal hidden');
+    }
+    
+    // Создаем оверлей
+    const overlay = document.createElement('div');
+    overlay.id = 'congratulations-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 999999;
+        color: white;
+        font-family: 'Arial', sans-serif;
+        text-align: center;
+        padding: 20px;
+        animation: fadeIn 0.5s ease-out;
+    `;
+    
+    // Создаем стили для анимаций
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Получаем информацию о победителе из оригинальной игры
+    let winnerText = "Congratulations!";
+    try {
+        const winnerMessage = document.getElementById('winner-message');
+        if (winnerMessage) {
+            winnerText = winnerMessage.textContent || "Congratulations!";
+        }
+    } catch (e) {
+        console.log('Could not get winner message:', e);
+    }
+    
+    // Содержимое поздравления
+    overlay.innerHTML = `
+        <div style="font-size: 80px; margin-bottom: 20px; animation: bounce 2s infinite;">
+            🐾
+        </div>
+        <h1 style="font-size: 42px; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
+            ${winnerText}
+        </h1>
+        <p style="font-size: 24px; margin-bottom: 30px; max-width: 600px; line-height: 1.5;">
+            You matched all the animal pairs!<br>
+            Fantastic memory, kitty!
+        </p>
+        <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; margin: 20px 0; backdrop-filter: blur(10px);">
+            <p style="font-size: 18px; margin: 10px 0;">🧠 Memory game completed!</p>
+            <p style="font-size: 18px; margin: 10px 0;">⭐ All 8 pairs matched!</p>
+            <p style="font-size: 18px; margin: 10px 0;">🐱 Your teacher will be proud!</p>
+        </div>
+        <button id="backButton" style="
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 18px 50px;
+            font-size: 22px;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: all 0.3s;
+            font-weight: bold;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+            animation: pulse 2s infinite;
+        ">
+            🏫 Back to Classroom
+        </button>
+        <p style="margin-top: 20px; font-size: 16px; color: rgba(255,255,255,0.8);">
+            Press ESC or click the button above to return
+        </p>
+    `;
+    
+    // Добавляем на страницу
+    document.body.appendChild(overlay);
+    console.log('Congratulations overlay added');
+    
+    // Обработчик для кнопки Back
+    document.getElementById('backButton').addEventListener('click', function() {
+        console.log('Back button clicked');
+        this.style.background = '#229954';
+        this.style.transform = 'scale(0.95)';
+        
+        // Пытаемся закрыть игру через родительское окно
+        try {
+            window.parent.postMessage({ 
+                type: 'CLOSE_GAME',
+                gameName: 'board'
+            }, '*');
+            console.log('Close message sent to parent');
+        } catch (error) {
+            console.log('Could not notify parent, closing locally');
+            overlay.style.opacity = '0';
+            overlay.style.transition = 'opacity 0.5s';
+            setTimeout(() => {
+                overlay.remove();
+                // Можем показать сообщение для локального тестирования
+                if (window === window.top) {
+                    alert('Game completed! In the full version, this would return to the classroom.');
+                }
+            }, 500);
+        }
+    });
+    
+    // Обработчик клавиши Escape
+    const escapeHandler = function(e) {
+        if (e.key === 'Escape') {
+            document.getElementById('backButton').click();
+        }
+    };
+    document.addEventListener('keydown', escapeHandler);
+    
+    // Блокируем прокрутку
+    document.body.style.overflow = 'hidden';
+    console.log('Congratulations screen fully setup');
+}
+
+// Перехватываем кнопку "Play Again" из оригинальной игры
+function interceptPlayAgainButton() {
+    const originalPlayAgainButton = document.getElementById('play-again');
+    if (originalPlayAgainButton) {
+        console.log('Found original Play Again button, adding listener');
+        
+        // Сохраняем оригинальный обработчик
+        const originalOnClick = originalPlayAgainButton.onclick;
+        
+        // Перехватываем клик
+        originalPlayAgainButton.addEventListener('click', function(e) {
+            console.log('Original Play Again button clicked - intercepted');
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Вместо перезапуска показываем поздравление
+            notifyGameCompletion();
+            
+            return false;
+        }, true);
+    }
+}
+
+// Мягкий мониторинг - проверяем только каждые 3 секунды
+function startGentleMonitoring() {
+    console.log('Starting gentle monitoring for Animal Memory');
+    
+    let checkCount = 0;
+    const maxChecks = 60; // Максимум 60 проверок (3 минуты игры)
+    
+    const checkInterval = setInterval(() => {
+        checkCount++;
+        
+        // Прекращаем проверку после 3 минут (на всякий случай)
+        if (checkCount > maxChecks) {
+            clearInterval(checkInterval);
+            console.log('Monitoring stopped after 3 minutes');
+            return;
+        }
+        
+        // Проверяем завершение игры
+        if (checkAnimalMemoryCompletion()) {
+            clearInterval(checkInterval);
+            console.log('Game completion detected after', checkCount, 'checks');
+            
+            // Даем время для отображения оригинального экрана победы
+            setTimeout(() => {
+                notifyGameCompletion();
+            }, 2000);
+        }
+    }, 3000); // Проверяем только каждые 3 секунды!
+}
+
+// Инициализация обработчика завершения игры
+function initializeAnimalMemoryHandler() {
+    console.log('Animal Memory completion handler initialized');
+    
+    // 1. Перехватываем кнопку Play Again
+    interceptPlayAgainButton();
+    
+    // 2. Запускаем мягкий мониторинг с задержкой
+    setTimeout(() => {
+        startGentleMonitoring();
+    }, 5000); // Начинаем мониторинг только через 5 секунд после загрузки
+    
+    // 3. Для тестирования: добавляем глобальную функцию
+    window.completeAnimalGame = notifyGameCompletion;
+    
+    console.log('Animal Memory handler setup complete');
+}
+
+// Запускаем при полной загрузке страницы
+window.addEventListener('load', function() {
+    // Даем игре время на инициализацию
+    setTimeout(initializeAnimalMemoryHandler, 1000);
+});
+
+console.log('Animal Memory completion handler loaded');
+</script>
+
+<style>
+/* Дополнительные стили */
+#congratulations-overlay button:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.3) !important;
+}
+
+#congratulations-overlay button:active {
+    transform: translateY(0) !important;
+}
+</style>
+
+</body>
+</html>
